@@ -21,34 +21,47 @@ class Message {
         this.message = message;
     }
 }
+let textRow = 0;
 
 function addMessage(type, sender, message) {
     let length = ctx.measureText(message).width;
     let lines = Math.ceil(length / 700);
     let texts = [];
     let totalLength = 0;
+
     for (let i = 0; i < lines; i++) {
+
         texts[i] = "";
+        if (i == 0 && sender) {
+            totalLength += ctx.measureText(sender + ": ").width;
+        }
         for (let j = 0; j < message.length; j++) {
             totalLength += ctx.measureText(message[j]).width;
-            texts[i] += message[j];
+
             if (totalLength > 700) {
+                j--;
                 totalLength = 0;
                 let texty = message.split("");
                 texty.splice(0, j - 1)
                 message = texty.join("");
                 break;
+            } else {
+                texts[i] += message[j];
             }
+
         }
         totalLength = 0;
     }
     messages.push(new Message(type, sender, texts[0]));
-
+    if (textRow == 15 && scroll == messages.length - 16) {
+        scroll++;
+    }
 
     if (texts.length > 1) {
         texts.shift();
         addMessage(type, "", texts.join(""));
     }
+
 }
 let sounds = [];
 sounds[0] = new Audio("Join_Sound.wav");
@@ -84,6 +97,9 @@ document.onkeydown = e => {
     }
     if (e.key == "ArrowLeft") cursor--;
     if (e.key == "ArrowRight") cursor++;
+    if (e.key == "ArrowUp") scroll--;
+    if (e.key == "ArrowDown") scroll++;
+    scroll = Math.max(0, Math.min(scroll, messages.length - 1));
     cursor = Math.min(Math.max(cursor, -1), input.length - 1);
     if (e.key == "Enter" && input.length > 0) {
         addMessage("message", username, input);
@@ -231,8 +247,8 @@ function Update() {
     ctx.strokeRect(10, c.height - 55, 710, 45);
     ctx.clearRect(c.width - 350, 10, 340, 490);
     ctx.strokeRect(c.width - 350, 10, 340, 490);
-    let textRow = 0;
-    for (let message = scroll; message < Math.min(scroll + 20, messages.length); message++) {
+    textRow = 0;
+    for (let message = scroll; message < Math.min(scroll + 15, messages.length); message++) {
 
         let type = messages[message].type;
         let name = messages[message].sender;
@@ -260,7 +276,7 @@ function Update() {
         if (textRow > 15) {
             let diff = 15 - textRow
             textRow = 15;
-            scroll -= diff;
+
         }
 
     }
