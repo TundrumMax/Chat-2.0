@@ -23,7 +23,32 @@ class Message {
 }
 
 function addMessage(type, sender, message) {
-    messages.push(new Message(type, sender, message));
+    let length = ctx.measureText(message).width;
+    let lines = Math.ceil(length / 700);
+    let texts = [];
+    let totalLength = 0;
+    for (let i = 0; i < lines; i++) {
+        texts[i] = "";
+        for (let j = 0; j < message.length; j++) {
+            totalLength += ctx.measureText(message[j]).width;
+            texts[i] += message[j];
+            if (totalLength > 700) {
+                totalLength = 0;
+                let texty = message.split("");
+                texty.splice(0, j - 1)
+                message = texty.join("");
+                break;
+            }
+        }
+        totalLength = 0;
+    }
+    messages.push(new Message(type, sender, texts[0]));
+
+
+    if (texts.length > 1) {
+        texts.shift();
+        addMessage(type, "", texts.join(""));
+    }
 }
 let sounds = [];
 sounds[0] = new Audio("Join_Sound.wav");
@@ -212,24 +237,7 @@ function Update() {
         let type = messages[message].type;
         let name = messages[message].sender;
         let text = messages[message].message;
-        let length = ctx.measureText(text).width;
-        let lines = Math.ceil(length / 700);
-        let texts = [];
-        let totalLength = 0;
-        for (let i = 0; i < lines; i++) {
-            texts[i] = "";
-            for (let j = 0; j < text.length; j++) {
-                totalLength += ctx.measureText(text[j]).width;
-                texts[i] += text[j];
-                if (totalLength > 700) {
-                    totalLength = 0;
-                    let texty = text.split("");
-                    texty.splice(0, j - 1)
-                    text = texty.join("");
-                    break;
-                }
-            }
-        }
+
 
 
         if (type == "error") {
@@ -247,17 +255,14 @@ function Update() {
         if (type == "notice") {
             ctx.font = "italic " + ctx.font;
         }
-        ctx.fillText(texts[0], len + 20, 30 * textRow + 30);
+        ctx.fillText(text, len + 20, 30 * textRow + 30);
         textRow++;
         if (textRow > 15) {
             let diff = 15 - textRow
             textRow = 15;
             scroll -= diff;
         }
-        if (texts.length > 1) {
-            texts.shift();
-            addChatLine(type, "", texts.join(""));
-        }
+
     }
     ctx.font = "20px Arial";
     ctx.fillStyle = "black";
@@ -265,7 +270,6 @@ function Update() {
     let len = input.substring(0, cursor + 1);
     let width = ctx.measureText(len).width;
     ctx.fillRect(width + 20, c.height - 42, 1, 20);
-    let users = Object.keys(global.users);
     let index = 0;
     for (let userbleh in global.users) {
         index++;
